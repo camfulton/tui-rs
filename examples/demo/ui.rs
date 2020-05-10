@@ -1,8 +1,8 @@
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    symbols,
+    style::{Color, Modifier, Style, StyleDiff},
+    symbols, text,
     widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
     widgets::{
         Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, Paragraph, Row, Sparkline,
@@ -17,11 +17,21 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(f.size());
-    let tabs = Tabs::default()
+    let titles = app
+        .tabs
+        .titles
+        .iter()
+        .map(|t| {
+            text::Line::with_spans(vec![text::Span::styled(
+                *t,
+                Style::default().fg(Color::Green),
+            )])
+        })
+        .collect();
+    let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title(app.title))
-        .titles(&app.tabs.titles)
         .style(Style::default().fg(Color::Green))
-        .highlight_style(Style::default().fg(Color::Yellow))
+        .highlight_style_diff(StyleDiff::default().fg(Color::Yellow))
         .select(app.tabs.index);
     f.render_widget(tabs, chunks[0]);
     match app.tabs.index {
@@ -158,12 +168,12 @@ where
         f.render_widget(barchart, chunks[1]);
     }
     if app.show_chart {
-        let x_labels = [
+        let x_labels = vec![
             format!("{}", app.signals.window[0]),
             format!("{}", (app.signals.window[0] + app.signals.window[1]) / 2.0),
             format!("{}", app.signals.window[1]),
         ];
-        let datasets = [
+        let datasets = vec![
             Dataset::default()
                 .name("data2")
                 .marker(symbols::Marker::Dot)
@@ -179,30 +189,42 @@ where
                 .style(Style::default().fg(Color::Yellow))
                 .data(&app.signals.sin2.points),
         ];
-        let chart = Chart::default()
+
+        fn create_labels<'a, S>(labels: Vec<S>) -> Vec<text::Span<'a>>
+        where
+            S: 'a + AsRef<str>,
+        {
+            labels
+                .iter()
+                .map(|l| {
+                    text::Span::styled(String::from(l.as_ref()), Style::default().modifier(Modifier::BOLD))
+                })
+                .collect()
+        }
+
+        let chart = Chart::new(datasets)
             .block(
                 Block::default()
-                    .title("Chart")
-                    .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                    .title(text::Span::styled(
+                        "Chart",
+                        Style::default().fg(Color::Cyan).modifier(Modifier::BOLD),
+                    ))
                     .borders(Borders::ALL),
             )
             .x_axis(
                 Axis::default()
                     .title("X Axis")
                     .style(Style::default().fg(Color::Gray))
-                    .labels_style(Style::default().modifier(Modifier::ITALIC))
                     .bounds(app.signals.window)
-                    .labels(&x_labels),
+                    .labels(create_labels(x_labels)),
             )
             .y_axis(
                 Axis::default()
                     .title("Y Axis")
                     .style(Style::default().fg(Color::Gray))
-                    .labels_style(Style::default().modifier(Modifier::ITALIC))
                     .bounds([-20.0, 20.0])
-                    .labels(&["-20", "0", "20"]),
-            )
-            .datasets(&datasets);
+                    .labels(create_labels(vec!["-20", "0", "20"])),
+            );
         f.render_widget(chart, chunks[1]);
     }
 }
@@ -230,8 +252,10 @@ where
     ];
     let block = Block::default()
         .borders(Borders::ALL)
-        .title("Footer")
-        .title_style(Style::default().fg(Color::Magenta).modifier(Modifier::BOLD));
+        .title(text::Span::styled(
+            "Footer",
+            Style::default().fg(Color::Magenta).modifier(Modifier::BOLD),
+        ));
     let paragraph = Paragraph::new(text.iter()).block(block).wrap(true);
     f.render_widget(paragraph, area);
 }

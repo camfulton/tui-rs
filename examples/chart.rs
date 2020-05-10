@@ -12,6 +12,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
+    text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
     Terminal,
 };
@@ -92,12 +93,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .as_ref(),
                 )
                 .split(size);
-            let x_labels = [
+            let x_labels = vec![
                 format!("{}", app.window[0]),
                 format!("{}", (app.window[0] + app.window[1]) / 2.0),
                 format!("{}", app.window[1]),
             ];
-            let datasets = [
+            let datasets = vec![
                 Dataset::default()
                     .name("data2")
                     .marker(symbols::Marker::Dot)
@@ -109,94 +110,104 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .style(Style::default().fg(Color::Yellow))
                     .data(&app.data2),
             ];
-            let chart = Chart::default()
+
+            fn create_labels<'a, S>(labels: Vec<S>) -> Vec<Span<'a>>
+            where
+                S: 'a + AsRef<str>,
+            {
+                labels
+                    .iter()
+                    .map(|l| {
+                        Span::styled(String::from(l.as_ref()), Style::default().modifier(Modifier::BOLD))
+                    })
+                    .collect()
+            }
+
+            let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Chart 1")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .title(Span::styled(
+                            "Chart 1",
+                            Style::default().fg(Color::Cyan).modifier(Modifier::BOLD),
+                        ))
                         .borders(Borders::ALL),
                 )
                 .x_axis(
                     Axis::default()
                         .title("X Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds(app.window)
-                        .labels(&x_labels),
+                        .labels(create_labels(x_labels))
+                        .bounds(app.window),
                 )
                 .y_axis(
                     Axis::default()
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds([-20.0, 20.0])
-                        .labels(&["-20", "0", "20"]),
-                )
-                .datasets(&datasets);
+                        .labels(create_labels(vec!["-20", "0", "20"]))
+                        .bounds([-20.0, 20.0]),
+                );
             f.render_widget(chart, chunks[0]);
 
-            let datasets = [Dataset::default()
+            let datasets = vec![Dataset::default()
                 .name("data")
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Yellow))
                 .graph_type(GraphType::Line)
                 .data(&DATA)];
-            let chart = Chart::default()
+            let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Chart 2")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .title(Span::styled(
+                            "Chart 2",
+                            Style::default().fg(Color::Cyan).modifier(Modifier::BOLD),
+                        ))
                         .borders(Borders::ALL),
                 )
                 .x_axis(
                     Axis::default()
                         .title("X Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 5.0])
-                        .labels(&["0", "2.5", "5.0"]),
+                        .labels(create_labels(vec!["0", "2.5", "5.0"])),
                 )
                 .y_axis(
                     Axis::default()
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 5.0])
-                        .labels(&["0", "2.5", "5.0"]),
-                )
-                .datasets(&datasets);
+                        .labels(create_labels(vec!["0", "2.5", "5.0"])),
+                );
             f.render_widget(chart, chunks[1]);
 
-            let datasets = [Dataset::default()
+            let datasets = vec![Dataset::default()
                 .name("data")
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Yellow))
                 .graph_type(GraphType::Line)
                 .data(&DATA2)];
-            let chart = Chart::default()
+            let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Chart 3")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .title(Span::styled(
+                            "Chart 3",
+                            Style::default().fg(Color::Cyan).modifier(Modifier::BOLD),
+                        ))
                         .borders(Borders::ALL),
                 )
                 .x_axis(
                     Axis::default()
                         .title("X Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 50.0])
-                        .labels(&["0", "25", "50"]),
+                        .labels(create_labels(vec!["0", "25", "50"])),
                 )
                 .y_axis(
                     Axis::default()
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 5.0])
-                        .labels(&["0", "2.5", "5"]),
-                )
-                .datasets(&datasets);
+                        .labels(create_labels(vec!["0", "2.5", "5"])),
+                );
             f.render_widget(chart, chunks[2]);
         })?;
 

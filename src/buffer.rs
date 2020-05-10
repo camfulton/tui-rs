@@ -1,6 +1,7 @@
 use crate::{
     layout::Rect,
     style::{Color, Modifier, Style},
+    text::{Line, Span},
 };
 use std::cmp::min;
 use unicode_segmentation::UnicodeSegmentation;
@@ -296,6 +297,31 @@ impl Buffer {
             x_offset += width;
         }
         (x_offset as u16, y)
+    }
+
+    pub fn set_line<'a>(&mut self, x: u16, y: u16, line: &Line<'a>, width: u16) -> (u16, u16) {
+        let mut remaining_width = width;
+        let mut x = x;
+        for span in &line.spans {
+            if remaining_width == 0 {
+                break;
+            }
+            let pos = self.set_stringn(
+                x,
+                y,
+                span.content.as_ref(),
+                remaining_width as usize,
+                span.style,
+            );
+            let w = pos.0.saturating_sub(x);
+            x = pos.0;
+            remaining_width = remaining_width.saturating_sub(w);
+        }
+        (x, y)
+    }
+
+    pub fn set_span<'a>(&mut self, x: u16, y: u16, span: &Span<'a>, width: u16) -> (u16, u16) {
+        self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
     pub fn set_background(&mut self, area: Rect, color: Color) {

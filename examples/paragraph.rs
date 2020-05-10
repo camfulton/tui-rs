@@ -8,6 +8,7 @@ use tui::{
     backend::TermionBackend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
+    text::Span,
     widgets::{Block, Borders, Paragraph, Text},
     Terminal,
 };
@@ -66,26 +67,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ),
             ];
 
-            let block = Block::default()
-                .borders(Borders::ALL)
-                .title_style(Style::default().modifier(Modifier::BOLD));
+            let create_block = |title| {
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(Span::styled(title, Style::default().modifier(Modifier::BOLD)))
+            };
             let paragraph = Paragraph::new(text.iter())
-                .block(block.clone().title("Left, no wrap"))
+                .block(create_block("Left, no wrap"))
                 .alignment(Alignment::Left);
             f.render_widget(paragraph, chunks[0]);
             let paragraph = Paragraph::new(text.iter())
-                .block(block.clone().title("Left, wrap"))
+                .block(create_block("Left, wrap"))
                 .alignment(Alignment::Left)
                 .wrap(true);
             f.render_widget(paragraph, chunks[1]);
             let paragraph = Paragraph::new(text.iter())
-                .block(block.clone().title("Center, wrap"))
+                .block(create_block("Center, wrap"))
                 .alignment(Alignment::Center)
                 .wrap(true)
                 .scroll(scroll);
             f.render_widget(paragraph, chunks[2]);
             let paragraph = Paragraph::new(text.iter())
-                .block(block.clone().title("Right, wrap"))
+                .block(create_block("Right, wrap"))
                 .alignment(Alignment::Right)
                 .wrap(true);
             f.render_widget(paragraph, chunks[3]);

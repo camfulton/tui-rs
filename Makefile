@@ -6,6 +6,7 @@ SHELL=/bin/bash
 RUST_CHANNEL ?= stable
 CARGO_FLAGS =
 RUSTUP_INSTALLED = $(shell command -v rustup 2> /dev/null)
+TEST_FILTER ?=
 
 ifndef RUSTUP_INSTALLED
   CARGO = cargo
@@ -59,7 +60,7 @@ clippy: ## Check the style of the source code and catch common errors
 
 .PHONY: test
 test: ## Run the tests
-	$(CARGO) test --all-features
+	$(CARGO) test --all-features $(TEST_FILTER)
 
 # =============================== Examples ====================================
 
